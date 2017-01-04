@@ -9,12 +9,20 @@ public class Song {
 
     private String name;
     private String art;
-    private String duration;
+    private String duration,path;
+    private long time;
 
-    public Song(String name, String art, String duration) {
+    public Song(String name, String art, String duration,long time, String path) {
         this.name = name;
         this.art = art;
         this.duration = duration;
+        this.path =path;
+        this.time =time;
+    }
+
+
+    public String getPath() {
+        return path;
     }
 
     public Song(String name) {

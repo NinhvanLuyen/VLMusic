@@ -2,6 +2,8 @@ package kenhlaptrinh.net.vlmusic.views.fragments;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
@@ -15,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import java.io.IOException;
 import java.util.LinkedList;
 
 import butterknife.BindView;
@@ -66,13 +69,33 @@ public class Frm_ListSong extends Fragment {
         rev_listSong.setItemAnimator(new DefaultItemAnimator());
         rev_listSong.setLayoutManager(new LinearLayoutManager(getActivity()));
         rev_listSong.setAdapter(adapter_listSong);
+        adapter_listSong.setHandlerButton(new HandlerButton() {
+            @Override
+            public void change(int position) {
+
+            }
+
+            @Override
+            public void setOnclickSong(int position) {
+                MediaPlayer mediaPlayer =new MediaPlayer();
+                Log.e("Path",list_song.get(position).getPath());
+                Uri uri =Uri.parse(list_song.get(position).getPath());
+                try {
+                    mediaPlayer.setDataSource(getActivity(),uri);
+                    mediaPlayer.prepare();
+                    mediaPlayer.start();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
         return v;
 
     }
 
     private LinkedList<Song> getMusic() {
        mCursor = getActivity().getContentResolver().query(
-               MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, new String[]{MediaStore.Audio.Media.TITLE,MediaStore.Audio.Media.ARTIST,"("+MediaStore.Audio.Media.DURATION+")ASC",MediaStore.Audio.Media.ALBUM_KEY}, null, null,
+               MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, new String[]{MediaStore.Audio.Media.TITLE,MediaStore.Audio.Media.ARTIST,"("+MediaStore.Audio.Media.DURATION+")ASC",MediaStore.Audio.Media.ALBUM_KEY, "("+MediaStore.Audio.Media.DATA+")ASC"}, null, null,
                "" + MediaStore.Audio.Media.TITLE + "");
 
         int count = mCursor.getCount();
@@ -82,9 +105,9 @@ public class Frm_ListSong extends Fragment {
         int i = 0;
         if (mCursor.moveToFirst()) {
             do {
-
                 String arg2 = mCursor.getString(2);
-                s =new Song(mCursor.getString(0),mCursor.getString(1),new Unities().milliSecondsToTimer(Long.parseLong(arg2)));
+                String arg3 = mCursor.getString(4);
+                s =new Song(mCursor.getString(0),mCursor.getString(1),new Unities().milliSecondsToTimer(Long.parseLong(arg2)),Long.parseLong(arg2),arg3);
                 ls.add(s);
                 i++;
             } while (mCursor.moveToNext());
