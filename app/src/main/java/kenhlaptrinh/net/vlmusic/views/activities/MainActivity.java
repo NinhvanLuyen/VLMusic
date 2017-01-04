@@ -36,4 +36,9 @@ public class MainActivity extends AppCompatActivity implements HandlerButton {
     public void change(int position) {
         viewPager.setCurrentItem(position);
     }
+
+    @Override
+    public void setOnclickSong(int position) {
+
+    }
 }

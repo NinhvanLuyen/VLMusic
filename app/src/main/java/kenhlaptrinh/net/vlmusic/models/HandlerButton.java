@@ -6,4 +6,5 @@ package kenhlaptrinh.net.vlmusic.models;
 
 public interface HandlerButton {
     void change(int position);
+    void setOnclickSong(int position);
 }

@@ -10,6 +10,7 @@ import android.widget.TextView;
 import java.util.LinkedList;
 
 import kenhlaptrinh.net.vlmusic.R;
+import kenhlaptrinh.net.vlmusic.models.HandlerButton;
 import kenhlaptrinh.net.vlmusic.models.Song;
 
 /**
@@ -20,6 +21,8 @@ public class Adapter_ListSong  extends RecyclerView.Adapter<Adapter_ListSong.Vie
 
 private LinkedList<Song> m_listSong;
     private Activity activity;
+    private HandlerButton handlerButton ;
+
 
 
     public class ViewHolder extends RecyclerView.ViewHolder
@@ -52,10 +55,18 @@ private LinkedList<Song> m_listSong;
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
+    public void onBindViewHolder(ViewHolder holder, final int position) {
         holder.tv_name_Song.setText(m_listSong.get(position).getName());
         holder.tv_art.setText(m_listSong.get(position).getArt());
         holder.tv_timeduration.setText(m_listSong.get(position).getDuration());
+
+        holder.tv_name_Song.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                handlerButton.setOnclickSong(position);
+            }
+        });
+        ;
     }
 
     @Override
@@ -63,4 +74,7 @@ private LinkedList<Song> m_listSong;
         return m_listSong.size();
     }
 
+    public void setHandlerButton(HandlerButton handlerButton) {
+        this.handlerButton = handlerButton;
+    }
 }
