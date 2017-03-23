@@ -1,4 +1,4 @@
-package kenhlaptrinh.net.vlmusic.models;
+package kenhlaptrinh.net.vlmusic.unities;
 
 /**
  * Created by LuyenNinh on 1/1/17.
@@ -58,4 +58,6 @@ public class Unities {
         //trả về thời gian hiện tại trong mili giây
         return currentDuration * 1000;
     }
+
+
 }

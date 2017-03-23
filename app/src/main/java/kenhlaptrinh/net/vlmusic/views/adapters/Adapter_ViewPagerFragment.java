@@ -5,6 +5,8 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.widget.Button;
 
+import kenhlaptrinh.net.vlmusic.models.Click_Controll_Player;
+import kenhlaptrinh.net.vlmusic.models.Click_Next_Song_ListSong;
 import kenhlaptrinh.net.vlmusic.views.fragments.Frm_ListSong;
 import kenhlaptrinh.net.vlmusic.views.fragments.Frm_Player;
 
@@ -17,9 +19,11 @@ public class Adapter_ViewPagerFragment extends FragmentStatePagerAdapter {
     private int page_num;
     private Button btn_next;
 
+
     public Adapter_ViewPagerFragment(FragmentManager fm, int page_num) {
         super(fm);
         this.page_num = page_num;
+
     }
 
     @Override
@@ -28,10 +32,10 @@ public class Adapter_ViewPagerFragment extends FragmentStatePagerAdapter {
         switch (position) {
             case 0:
                 Frm_ListSong frm_listSong = new Frm_ListSong();
-
                 return frm_listSong;
             case 1:
-                return new Frm_Player();
+                Frm_Player frm_player= new Frm_Player();
+                return frm_player;
             default:
                 return null;
         }
@@ -55,6 +59,5 @@ public class Adapter_ViewPagerFragment extends FragmentStatePagerAdapter {
     public int getCount() {
         return page_num;
     }
-
 
 }

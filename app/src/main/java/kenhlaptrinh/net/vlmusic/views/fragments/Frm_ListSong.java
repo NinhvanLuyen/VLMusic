@@ -1,31 +1,38 @@
 package kenhlaptrinh.net.vlmusic.views.fragments;
 
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
-import android.database.Cursor;
-import android.media.MediaPlayer;
-import android.net.Uri;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.Bundle;
-import android.provider.MediaStore;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.Fragment;
-import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 
-import java.io.IOException;
 import java.util.LinkedList;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import kenhlaptrinh.net.vlmusic.R;
-import kenhlaptrinh.net.vlmusic.models.HandlerButton;
+import kenhlaptrinh.net.vlmusic.unities.GlobalSong;
+import kenhlaptrinh.net.vlmusic.models.setOnClickListSong;
 import kenhlaptrinh.net.vlmusic.models.Song;
-import kenhlaptrinh.net.vlmusic.models.Unities;
+import kenhlaptrinh.net.vlmusic.services.Bind_Services_Play_Controll;
+import kenhlaptrinh.net.vlmusic.views.activities.MainActivity;
 import kenhlaptrinh.net.vlmusic.views.adapters.Adapter_ListSong;
 
 /**
@@ -33,106 +40,153 @@ import kenhlaptrinh.net.vlmusic.views.adapters.Adapter_ListSong;
  */
 
 public class Frm_ListSong extends Fragment {
-    private kenhlaptrinh.net.vlmusic.models.HandlerButton HandlerButton;
-
     @BindView(R.id.rev_list_song)
     RecyclerView rev_listSong;
-    LinkedList<Song> list_song;
-    private Cursor mCursor ;
 
+    LinkedList<Song> list_song;
+    private Bind_Services_Play_Controll bind_services_play_controll;
+    private ServiceConnection myconnection;
+    private boolean isbounder = false;
+    private MainActivity activity;
+    private BroadcastReceiver broadcastReceiver;
+    private Adapter_ListSong adapter_listSong;
+    private final String TAG =Frm_ListSong.class.getName();
 
     public Frm_ListSong() {
-        // Required empty public constructor
     }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        list_song =getMusic();
+
+        activity = (MainActivity) getActivity();
+        list_song = activity.getData();
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(final LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.frm_step1, container, false);
         ButterKnife.bind(this, v);
+        adapter_listSong = new Adapter_ListSong(list_song, getActivity());
+//        rev_listSong.setItemAnimator(new DefaultItemAnimator());
 
-//        Button btn = (Button) v.findViewById(R.id.btn_next);
-//        btn.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                HandlerButton.change(1);
-//            }
-//        });z
-        Adapter_ListSong adapter_listSong = new Adapter_ListSong(list_song, getActivity());
-        rev_listSong.setItemAnimator(new DefaultItemAnimator());
-        rev_listSong.setLayoutManager(new LinearLayoutManager(getActivity()));
-        rev_listSong.setAdapter(adapter_listSong);
-        adapter_listSong.setHandlerButton(new HandlerButton() {
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity()) {
+
             @Override
-            public void change(int position) {
+            public void smoothScrollToPosition(RecyclerView recyclerView, RecyclerView.State state, int position) {
+                LinearSmoothScroller smoothScroller = new LinearSmoothScroller(getActivity()) {
 
+                    private static final float SPEED = 30f;// Change this value (default=25f)
+
+                    @Override
+                    protected float calculateSpeedPerPixel(DisplayMetrics displayMetrics) {
+                        return SPEED / displayMetrics.densityDpi;
+                    }
+
+                };
+                smoothScroller.setTargetPosition(position);
+                startSmoothScroll(smoothScroller);
+            }
+
+        };
+//        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
+        rev_listSong.setLayoutManager(layoutManager);
+        rev_listSong.setNestedScrollingEnabled(false);
+        rev_listSong.setAdapter(adapter_listSong);
+        rev_listSong.setHasFixedSize(true);
+        rev_listSong.setItemViewCacheSize(50);
+        rev_listSong.setDrawingCacheEnabled(true);
+        rev_listSong.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
+
+        myconnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                Bind_Services_Play_Controll.MyBinder binder = (Bind_Services_Play_Controll.MyBinder) service;
+                bind_services_play_controll = binder.getServices();
+                Log.e(TAG,"connect to services connected");
+                isbounder = true;
             }
 
             @Override
-            public void setOnclickSong(int position) {
-                MediaPlayer mediaPlayer =new MediaPlayer();
-                Log.e("Path",list_song.get(position).getPath());
-                Uri uri =Uri.parse(list_song.get(position).getPath());
-                try {
-                    mediaPlayer.setDataSource(getActivity(),uri);
-                    mediaPlayer.prepare();
-                    mediaPlayer.start();
-                } catch (IOException e) {
-                    e.printStackTrace();
+            public void onServiceDisconnected(ComponentName name) {
+                isbounder = false;
+                Log.e(TAG,"connect to services disconnect");
+
+            }
+        };
+        startServices();
+        broadcastReceiver = new BroadcastReceiver() {
+            @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                GlobalSong globalSong = GlobalSong.getInstance();
+                if (globalSong.getPosition() != globalSong.getCurrent_player_list()) {
+                    Message message = handler.obtainMessage(0);
+                    handler.sendMessage(message);
+                    globalSong.setCurrent_player_list(globalSong.getPosition());
                 }
+            }
+        };
+        getActivity().registerReceiver(broadcastReceiver, new IntentFilter(Bind_Services_Play_Controll.MY_FILLTER));
+
+        adapter_listSong.setSetOnClickListSong(new setOnClickListSong() {
+            @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+            @Override
+            public void setOnclickSong(int position) {
+                Song song = list_song.get(position);
+                GlobalSong globalSong = GlobalSong.getInstance();
+                globalSong.setSong(song);
+                globalSong.setPosition(position);
+                playSong(song);
+//                activity.changeBackground(song.getPath_album());
+                adapter_listSong.notifyDataSetChanged();
             }
         });
         return v;
-
     }
 
-    private LinkedList<Song> getMusic() {
-       mCursor = getActivity().getContentResolver().query(
-               MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, new String[]{MediaStore.Audio.Media.TITLE,MediaStore.Audio.Media.ARTIST,"("+MediaStore.Audio.Media.DURATION+")ASC",MediaStore.Audio.Media.ALBUM_KEY, "("+MediaStore.Audio.Media.DATA+")ASC"}, null, null,
-               "" + MediaStore.Audio.Media.TITLE + "");
-
-        int count = mCursor.getCount();
-
-        LinkedList<Song >ls =new LinkedList<>();
-        Song s ;
-        int i = 0;
-        if (mCursor.moveToFirst()) {
-            do {
-                String arg2 = mCursor.getString(2);
-                String arg3 = mCursor.getString(4);
-                s =new Song(mCursor.getString(0),mCursor.getString(1),new Unities().milliSecondsToTimer(Long.parseLong(arg2)),Long.parseLong(arg2),arg3);
-                ls.add(s);
-                i++;
-            } while (mCursor.moveToNext());
+    private void startServices() {
+        Intent intent = new Intent(getActivity(), Bind_Services_Play_Controll.class);
+        if (isbounder) {
+            getActivity().unbindService(myconnection);
+            getActivity().bindService(intent, myconnection, Context.BIND_AUTO_CREATE);
+            isbounder = false;
+        } else {
+            getActivity().bindService(intent, myconnection, Context.BIND_AUTO_CREATE);
+            isbounder = true;
         }
+    }
 
-        mCursor.close();
+    private Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            adapter_listSong.notifyDataSetChanged();
+        }
+    };
 
-        return ls;
+    private void playSong(Song song) {
+        bind_services_play_controll.playSong(song);
     }
 
     @Override
     public void onStop() {
         super.onStop();
-      Log.e("Stop","stiop");
+        Log.e(TAG, "stiop");
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        Log.e("Destroy","destroy");
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        HandlerButton = (HandlerButton) context;
+//        if (isbounder) {
+//            getActivity().unregisterReceiver(broadcastReceiver);
+//            isbounder= false;
+//        }
+        getActivity().unregisterReceiver(broadcastReceiver);
+        getActivity().unbindService(myconnection);
+        Log.e(TAG, "destroy");
+        GlobalSong.removeInstance();
     }
 }

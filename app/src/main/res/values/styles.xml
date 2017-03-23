@@ -3,14 +3,22 @@
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/DimGray</item>
+
         <item name="colorPrimaryDark">@color/DimGray_Das</item>
-        <item name="colorAccent">@color/White</item>
+        <item name="colorAccent">@color/Tomato</item>
         <item name="android:colorForeground">@color/White</item>
+        <item name="android:windowActionBarOverlay">true</item>
+        <item name="android:actionBarStyle">@style/action_bar_theme</item>
+        <item name="android:actionMenuTextColor">#fff</item>
     </style>
-<style name="item_song">
+
+    <style name="item_song">
         <item name="android:textColor">@color/White</item>
         <item name="android:textStyle">bold</item>
 
-</style>
+    </style>
+
+    <style name="action_bar_theme" parent="@android:style/Widget.Holo.ActionBar">
+        <item name="android:background">#b3000000</item>
+    </style>
 </resources>
